@@ -103,8 +103,11 @@ def fit2df(fit_file: str) -> pd.DataFrame:
     return df
 
 
-def fit2csv(fitfile: str, outfile):
-    df = fit2df(fitfile)
+def fit2csv(fitfile: str | pd.DataFrame, outfile=None):
+    if isinstance(fitfile, str):
+        df = fit2df(fitfile)
+    elif isinstance(fitfile, pd.DataFrame):
+        df = fitfile
     # deal with timezone columns in FitDataMessages_df
     date_columns = df.select_dtypes(include=['datetime64[ns, UTC]']).columns
     for c in date_columns:
@@ -113,10 +116,13 @@ def fit2csv(fitfile: str, outfile):
                 lambda a: datetime.strftime(a, "%Y-%m-%d %H:%M:%S") if not pd.isnull(a) else '')
         except:
             raise
-    df.to_csv(outfile)
+    if outfile:
+        return df.to_csv(outfile)
+    else:
+        return df.to_csv().encode('utf-8')
 
 
-def fit2excel(fitfile, outfile):
+def fit2excel(fitfile, outfile=None):
     df = fit2df(fitfile)
     date_columns = df.select_dtypes(include=['datetime64[ns, UTC]']).columns
     for c in date_columns:
@@ -125,7 +131,11 @@ def fit2excel(fitfile, outfile):
                 lambda a: datetime.strftime(a, "%Y-%m-%d %H:%M:%S") if not pd.isnull(a) else '')
         except:
             raise
-    df.to_excel(outfile)
+    if outfile:
+        return df.to_excel(outfile)
+    else:
+        return df.to_excel().encode('utf-8')
+
 
 def fitfileinfo(fit, show_unkown=False):
     "Creates a MarkDown text file object with information about the fit file"
