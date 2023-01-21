@@ -115,7 +115,7 @@ def climb_power_eestimate(df: pd.DataFrame, rider_weight: float, bike_weight: fl
     CdA = drag_coefficient * frontal_area
 
     air_density = ((101325 / (287.05 * 273.15)) * (273.15 / (temperature + 273.15)) *
-                   exp((-101325 / (287.05 * 273.15)) * 9.8067 * (avg_elevation / 1013.25)))
+                   exp((-101325 / (287.05 * 273.15)) * 9.8067 * (avg_elevation / 101325)))
     effective_wind_speed = np.cos(radians(wind_direction)) * wind_speed
     # # Components of power, watts
     air_drag_watts = 0.5 * CdA * air_density * (speed + effective_wind_speed) ** 2 * speed
