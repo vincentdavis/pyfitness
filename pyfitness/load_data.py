@@ -109,7 +109,11 @@ def fit2csv(fitfile: str | pd.DataFrame, outfile=None):
     elif isinstance(fitfile, pd.DataFrame):
         df = fitfile
     # deal with timezone columns in FitDataMessages_df
-    date_columns = df.select_dtypes(include=['datetime64[ns, UTC]']).columns
+    try:
+        date_columns = df.select_dtypes(include=['datetime64[ns, UTC]']).columns
+    except:
+        date_columns = []
+
     for c in date_columns:
         try:
             df[c] = df[c].apply(
