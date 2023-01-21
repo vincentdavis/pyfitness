@@ -9,15 +9,20 @@ import pandas as pd
 
 pd.set_option('mode.chained_assignment', None)
 
+"""
+About Enhanced: https://developerportal.garmin.com/blog/activity-fit-files-deprecating-speed-and-altitude
+
+"""
+
 
 def slots2dict(classobj: object) -> dict:
-    "Convert a class object with slots to a dict"
+    """Convert a class object with slots to a dict"""
     # {s: getattr(classobj, s, None) for s in classobj.__slots__}
     return {s: getattr(classobj, s, None) for s in classobj.__slots__ if 'unknown_' not in s}
 
 
 def FieldDefinition2dict(frame: fitdecode.records.FitDefinitionMessage) -> dict:
-    "Convert a FieldDefinition to dict"
+    """Convert a FieldDefinition to dict"""
     frame_dict = {}
     for d in frame.field_defs:
         if 'unknown_' in d.name.lower():
@@ -31,7 +36,7 @@ def FieldDefinition2dict(frame: fitdecode.records.FitDefinitionMessage) -> dict:
 
 
 def frame2dict(frame: fitdecode.records.FitDataMessage) -> dict:
-    "Convert a fonvert frame fields to dict"
+    """Convert a fonvert frame fields to dict"""
     frame_dict = {}
     for field in frame.fields:
         # print(f"Frame Field Name: {field.value}")
@@ -142,7 +147,7 @@ def fit2excel(fitfile, outfile=None):
 
 
 def fitfileinfo(fit, show_unkown=False):
-    "Creates a MarkDown text file object with information about the fit file"
+    """Creates a MarkDown text file object with information about the fit file"""
     if fit.__class__ == fitdecode.reader.FitReader:
         pass
     else:
