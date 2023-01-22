@@ -65,7 +65,7 @@ def simulator(df: pd.DataFrame, rider_weight: float, bike_weight: float, wind_sp
     return df
 
 
-def climb_power_eestimate(df: pd.DataFrame, rider_weight: float, bike_weight: float, wind_speed: float,
+def climb_power_estimate(df: pd.DataFrame, rider_weight: float, bike_weight: float, wind_speed: float,
                           wind_direction: int,
                           temperature: float, drag_coefficient: float, frontal_area: float, rolling_resistance: float,
                           efficiency_loss: float) -> dict[int, float, ...]:
