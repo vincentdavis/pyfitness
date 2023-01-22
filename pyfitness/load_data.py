@@ -11,7 +11,6 @@ pd.set_option('mode.chained_assignment', None)
 
 """
 About Enhanced: https://developerportal.garmin.com/blog/activity-fit-files-deprecating-speed-and-altitude
-
 """
 
 
