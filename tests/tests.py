@@ -1,7 +1,9 @@
 import os
 
 from pyfitness.load_data import fit2dict, fit2df, fit2csv, fit2excel
-from pyfitness.dynamics import simulator, max_climb
+from pyfitness.dynamics import simulator
+from pyfitness.statistics import max_climb, max_effort
+
 
 
 def test_fit2dict():
@@ -50,3 +52,11 @@ def test_simulator():
         df = fit2df(fit)
         sim = simulator(df, rider_weight=70, bike_weight=10, wind_speed=3, wind_direction=3, temperature=20.1,
                        drag_coefficient=0.8, frontal_area=0.565, rolling_resistance=0.005, efficiency_loss=0.04)
+
+def test_max_effort():
+    fit1 = "testdata/cheats/pedal_calibration/Zwift_KickrBikeV1_TruePower_Dec_20_2022.fit"
+    fit2 = "testdata/indoor/10k_vEveresting.fit"
+    fit3 = "testdata/Luciano/Outdoor/Luciano_indoor_climb_528m_distance_22.98km_power5_291.fit"
+    for fit in [fit1, fit2, fit3]:
+        df = fit2df(fit)
+        max_effort(df, seconds=300, columns=['power', 'heart_rate', 'cadence'])

@@ -1,6 +1,29 @@
 import pandas as pd
 
 
+def max_effort(df: pd.DataFrame, **kwargs) -> dict:
+    """Find the max effort for the given metric:
+    MAX given Metric
+    Time: Find max of all metrics.
+    max_effort(df, seconds=60, columns=['power', 'heart_rate', 'cadence'])
+    """
+    if 'columns' in kwargs.keys():  # list of columns to use
+        columns = kwargs['columns']
+    else:
+        columns = ['power', 'altitude', 'distance', 'speed', 'cadence', 'heart_rate', 'slope']
+    results: dict = {}
+    if 'seconds' in kwargs.keys():
+        for col in columns:
+            if col in df.columns:
+                idx = df[col].diff(kwargs['seconds']).idxmax()
+                # TODO: Calculate the start position and values
+                results[col] = df.loc[idx, col]
+            else:
+                results[col] = None
+    print(results)
+    return results
+
+
 def max_climb(df: pd.DataFrame, seconds: int) -> dict[str, int, int, float, float]:
     """Find the max elevation gain for the given time period
     Assumes a column named seconds exists in the dataframe
