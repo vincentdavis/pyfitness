@@ -99,3 +99,51 @@ def climb_power_estimate(df: pd.DataFrame, rider_weight: float, bike_weight: flo
             'air_drag_watts': air_drag_watts, 'climbing_watts': climbing_watts, 'rolling_watts': rolling_watts,
             'vam_mhr': vam_mhr, 'est_power_no_loss': est_power_no_loss, 'est_power': est_power}
 
+class DynamicModel(object):
+    """Estimate metrics from other data."""
+
+    def __int__(self, df: pd.DataFrame):
+        self.df = df
+        self.altitudevar = None
+        self.speedvar = None
+
+    def prepare(self):
+        """We assume the following to be constant or known.
+        For example, we assume the Air Density can be calculated from known air tempurature and alititude.
+        """
+        try:
+            assert (all([c in self.df.columns for c in ['distance', 'altitude']]) or
+                    all([c in self.df.columns for c in ['distance', 'enhanced_altitude']]))
+        except AssertionError:
+            # print(f"{df.columns}")
+            raise AssertionError(f"Missing columns in dataframe. Must have 'seconds', 'distance', and 'altitude'")
+        # Use the best Altitude data.
+        if 'enhanced_altitude' in self.df.columns:
+            self.altitudevar = 'enhanced_altitude'
+        else:
+            self.altitudevar = 'altitude'
+        # Use the best speed data
+        if "enhanced_speed" in self.df.columns:
+            self.speedvar = "enhanced_speed"
+        elif "speed" in self.df.columns:
+            self.speedvar = "speed"
+        else:  # or calculate speed
+            self.df['speed_calculated'] = self.df.distance.diff() / self.df.time.diff()
+            self.speedvar = "speed_calculated"
+
+        # # create a seconds based col starting at 0
+        # # This is used for to select the start and end time
+        if 'seconds' not in self.df.columns:
+            self.df['seconds'] = pd.to_datetime(self.df.index, unit='s', origin='unix').astype(int) // 10 ** 9
+            self.df['seconds'] = self.df['seconds'] - self.df.seconds.min()
+
+        self.df['vam'] = (self.df[self.altitudevar].diff() / self.df.seconds.diff()) * 3600
+        self.df['slope'] = self.df[self.altitudevar].diff() / self.df.distance.diff()
+
+
+
+        # def columns(self) -> list:
+        #     return [c for c in self.df.columns if c in self.known]
+
+    def estimate(self, columns: list[str]):
+
