@@ -41,7 +41,7 @@ cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=pyfitn
 no-cov = "cov --no-cov {args}"
 
 [[tool.hatch.envs.test.matrix]]
-python = ["310", "311"]
+python = ["311", "312"]
 
 [tool.coverage.run]
 branch = true
@@ -56,3 +56,11 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.black]
+line-length = 120
+target-version = ['py311']

@@ -112,6 +112,8 @@ def fit2csv(fitfile: str | pd.DataFrame, outfile=None):
         df = fit2df(fitfile)
     elif isinstance(fitfile, pd.DataFrame):
         df = fitfile
+    else:
+        raise ValueError("fitfile must be a filename or a pandas dataframe")
     # deal with timezone columns in FitDataMessages_df
     try:
         date_columns = df.select_dtypes(include=['datetime64[ns, UTC]']).columns
