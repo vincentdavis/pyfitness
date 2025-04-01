@@ -1,7 +1,0 @@
--r requirements.txt
-pip==23.2
-hatch==1.7.0
-ruff==0.0.278
-pur==7.1.0
-black==23.7.0
-# 'black[d]'

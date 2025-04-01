@@ -1,6 +1,6 @@
 import os
 
-from pyfitness.load_data import fit2dict, fit2df, fit2csv, fit2excel
+from pyfitness.fd_loader import fit2dict, fit2df, fit2csv, fit2excel
 from pyfitness.dynamics import simulator
 from pyfitness.statistics import max_climb, max_effort
 

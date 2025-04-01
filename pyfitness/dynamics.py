@@ -4,71 +4,96 @@ import numpy as np
 import pandas as pd
 
 
-def simulator(df: pd.DataFrame, rider_weight: float, bike_weight: float, wind_speed: float, wind_direction: int,
-              temperature: float, drag_coefficient: float, frontal_area: float, rolling_resistance: float,
-              efficiency_loss: float, speedcol: str = None, altitudecol: str = None) -> pd.DataFrame:
+def simulator(
+    df: pd.DataFrame,
+    rider_weight: float,
+    bike_weight: float,
+    wind_speed: float,
+    wind_direction: int,
+    temperature: float,
+    drag_coefficient: float,
+    frontal_area: float,
+    rolling_resistance: float,
+    efficiency_loss: float,
+    speedcol: str = None,
+    altitudecol: str = None,
+) -> pd.DataFrame:
     """Estimate power output based on the given parameters"""
     try:
-        assert (all([c in df.columns for c in ['distance', 'altitude']]) or
-                all([c in df.columns for c in ['distance', 'enhanced_altitude']]))
+        assert all([c in df.columns for c in ["distance", "altitude"]]) or all(
+            [c in df.columns for c in ["distance", "enhanced_altitude"]]
+        )
     except AssertionError:
         # print(f"{df.columns}")
-        raise AssertionError(f"Missing columns in dataframe. Must have 'seconds', 'distance', and 'altitude'")
+        raise AssertionError("Missing columns in dataframe. Must have 'seconds', 'distance', and 'altitude'")
     # Use the best Altitude data.
-    if 'enhanced_altitude' in df.columns:
-        altitudevar = 'enhanced_altitude'
+    if "enhanced_altitude" in df.columns:
+        altitudevar = "enhanced_altitude"
     else:
-        altitudevar = 'altitude'
+        altitudevar = "altitude"
     # Use the best speed data
     if "enhanced_speed" in df.columns:
         speedvar = "enhanced_speed"
     elif "speed" in df.columns:
         speedvar = "speed"
     else:  # or calculate speed
-        df['speed_calculated'] = df.distance.diff() / df.time.diff()
+        df["speed_calculated"] = df.distance.diff() / df.time.diff()
         speedvar = "speed_calculated"
     # User set speed and altitude. This could be any col in the df
     if altitudecol is not None:
-        assert (altitudecol in df.columns)
+        assert altitudecol in df.columns
         altitudevar = altitudecol
     if speedcol is not None:
-        assert (speedcol in df.columns)
+        assert speedcol in df.columns
         speedvar = speedcol
 
     # # create a seconds based col starting at 0
     # # This is used for to select the start and end time
-    if 'seconds' not in df.columns:
-        df['seconds'] = pd.to_datetime(df.index, unit='s', origin='unix').astype(int) // 10 ** 9
-        df['seconds'] = df['seconds'] - df.seconds.min()
+    if "seconds" not in df.columns:
+        df["seconds"] = pd.to_datetime(df.index, unit="s", origin="unix").astype(int) // 10**9
+        df["seconds"] = df["seconds"] - df.seconds.min()
 
-    df['vam'] = (df[altitudevar].diff() / df.seconds.diff()) * 3600
-    df['slope'] = df[altitudevar].diff() / df.distance.diff()
+    df["vam"] = (df[altitudevar].diff() / df.seconds.diff()) * 3600
+    df["slope"] = df[altitudevar].diff() / df.distance.diff()
 
     # # Constants
     CdA = drag_coefficient * frontal_area
     altitude = (df.altitude.max() - df.altitude.min()) / 2
     # intermediate calculations
-    df['air_density'] = ((101325 / (287.05 * 273.15)) * (273.15 / (temperature + 273.15)) *
-                         exp((-101325 / (287.05 * 273.15)) * 9.8067 * (altitude / 101325)))
-    df['effective_wind_speed'] = np.cos(radians(wind_direction)) * wind_speed
+    df["air_density"] = (
+        (101325 / (287.05 * 273.15))
+        * (273.15 / (temperature + 273.15))
+        * exp((-101325 / (287.05 * 273.15)) * 9.8067 * (altitude / 101325))
+    )
+    df["effective_wind_speed"] = np.cos(radians(wind_direction)) * wind_speed
     # # Components of power, watts
-    df['air_drag_watts'] = 0.5 * CdA * df.air_density * np.square(df[speedvar] + df.effective_wind_speed) * df[speedvar]
-    df['climbing_watts'] = (bike_weight + rider_weight) * 9.8067 * np.sin(np.arctan(df.slope)) * df[speedvar]
-    df['rolling_watts'] = np.cos(np.arctan(df.slope)) * 9.8067 * (
-            bike_weight + rider_weight) * rolling_resistance * df[speedvar]
-    df['acceleration_watts'] = (bike_weight + rider_weight) * (df[speedvar].diff() / df.seconds.diff()) * df[speedvar]
-    df['est_power_no_loss'] = df[['air_drag_watts', 'climbing_watts', 'rolling_watts', 'acceleration_watts']].sum(
-        axis='columns')
-    df['est_power'] = df['est_power_no_loss'] / (1 - efficiency_loss)
-    df['efficiency_loss_watts'] = df['est_power_no_loss'] - df['est_power']
-    df['est_power_no_acc'] = (df['est_power_no_loss'] - df['acceleration_watts']) / (1 - efficiency_loss)
+    df["air_drag_watts"] = 0.5 * CdA * df.air_density * np.square(df[speedvar] + df.effective_wind_speed) * df[speedvar]
+    df["climbing_watts"] = (bike_weight + rider_weight) * 9.8067 * np.sin(np.arctan(df.slope)) * df[speedvar]
+    df["rolling_watts"] = (
+        np.cos(np.arctan(df.slope)) * 9.8067 * (bike_weight + rider_weight) * rolling_resistance * df[speedvar]
+    )
+    df["acceleration_watts"] = (bike_weight + rider_weight) * (df[speedvar].diff() / df.seconds.diff()) * df[speedvar]
+    df["est_power_no_loss"] = df[["air_drag_watts", "climbing_watts", "rolling_watts", "acceleration_watts"]].sum(
+        axis="columns"
+    )
+    df["est_power"] = df["est_power_no_loss"] / (1 - efficiency_loss)
+    df["efficiency_loss_watts"] = df["est_power_no_loss"] - df["est_power"]
+    df["est_power_no_acc"] = (df["est_power_no_loss"] - df["acceleration_watts"]) / (1 - efficiency_loss)
     return df
 
 
-def climb_power_estimate(df: pd.DataFrame, rider_weight: float, bike_weight: float, wind_speed: float,
-                          wind_direction: int,
-                          temperature: float, drag_coefficient: float, frontal_area: float, rolling_resistance: float,
-                          efficiency_loss: float) -> dict[int, float, ...]:
+def climb_power_estimate(
+    df: pd.DataFrame,
+    rider_weight: float,
+    bike_weight: float,
+    wind_speed: float,
+    wind_direction: int,
+    temperature: float,
+    drag_coefficient: float,
+    frontal_area: float,
+    rolling_resistance: float,
+    efficiency_loss: float,
+) -> dict[int, float, ...]:
     """Find the average estimated power for the given time period
     We assume the df is filtered to the area of interest"""
     elapsed_time = df.seconds.max() - df.seconds.min()
@@ -80,24 +105,41 @@ def climb_power_estimate(df: pd.DataFrame, rider_weight: float, bike_weight: flo
     avg_elevation = df.altitude.mean()
     CdA = drag_coefficient * frontal_area
 
-    air_density = ((101325 / (287.05 * 273.15)) * (273.15 / (temperature + 273.15)) *
-                   exp((-101325 / (287.05 * 273.15)) * 9.8067 * (avg_elevation / 101325)))
+    air_density = (
+        (101325 / (287.05 * 273.15))
+        * (273.15 / (temperature + 273.15))
+        * exp((-101325 / (287.05 * 273.15)) * 9.8067 * (avg_elevation / 101325))
+    )
     effective_wind_speed = np.cos(radians(wind_direction)) * wind_speed
     # # Components of power, watts
     air_drag_watts = 0.5 * CdA * air_density * (speed + effective_wind_speed) ** 2 * speed
     climbing_watts = (bike_weight + rider_weight) * 9.8067 * np.sin(np.arctan(slope)) * speed
-    rolling_watts = np.cos(np.arctan(slope)) * 9.8067 * (
-            bike_weight + rider_weight) * rolling_resistance * speed
+    rolling_watts = np.cos(np.arctan(slope)) * 9.8067 * (bike_weight + rider_weight) * rolling_resistance * speed
     est_power_no_loss = sum([air_drag_watts, climbing_watts, rolling_watts])
     est_power = est_power_no_loss / (1 - efficiency_loss)
     vam_mhr = (accent / elapsed_time) * 3600
 
-    return {'elapsed_time': elapsed_time, 'distance': distance, 'accent': accent, 'slope': slope, 'speed': speed,
-            'speed_kph': speed_kph, 'avg_elevation': avg_elevation, 'frontal_area': frontal_area,
-            'drag_coefficient': drag_coefficient, 'CdA': CdA, 'air_density': air_density,
-            'effective_wind_speed': effective_wind_speed,
-            'air_drag_watts': air_drag_watts, 'climbing_watts': climbing_watts, 'rolling_watts': rolling_watts,
-            'vam_mhr': vam_mhr, 'est_power_no_loss': est_power_no_loss, 'est_power': est_power}
+    return {
+        "elapsed_time": elapsed_time,
+        "distance": distance,
+        "accent": accent,
+        "slope": slope,
+        "speed": speed,
+        "speed_kph": speed_kph,
+        "avg_elevation": avg_elevation,
+        "frontal_area": frontal_area,
+        "drag_coefficient": drag_coefficient,
+        "CdA": CdA,
+        "air_density": air_density,
+        "effective_wind_speed": effective_wind_speed,
+        "air_drag_watts": air_drag_watts,
+        "climbing_watts": climbing_watts,
+        "rolling_watts": rolling_watts,
+        "vam_mhr": vam_mhr,
+        "est_power_no_loss": est_power_no_loss,
+        "est_power": est_power,
+    }
+
 
 class DynamicModel(object):
     """Estimate metrics from other data."""
@@ -112,38 +154,37 @@ class DynamicModel(object):
         For example, we assume the Air Density can be calculated from known air tempurature and alititude.
         """
         try:
-            assert (all([c in self.df.columns for c in ['distance', 'altitude']]) or
-                    all([c in self.df.columns for c in ['distance', 'enhanced_altitude']]))
+            assert all([c in self.df.columns for c in ["distance", "altitude"]]) or all(
+                [c in self.df.columns for c in ["distance", "enhanced_altitude"]]
+            )
         except AssertionError:
             # print(f"{df.columns}")
-            raise AssertionError(f"Missing columns in dataframe. Must have 'seconds', 'distance', and 'altitude'")
+            raise AssertionError("Missing columns in dataframe. Must have 'seconds', 'distance', and 'altitude'")
         # Use the best Altitude data.
-        if 'enhanced_altitude' in self.df.columns:
-            self.altitudevar = 'enhanced_altitude'
+        if "enhanced_altitude" in self.df.columns:
+            self.altitudevar = "enhanced_altitude"
         else:
-            self.altitudevar = 'altitude'
+            self.altitudevar = "altitude"
         # Use the best speed data
         if "enhanced_speed" in self.df.columns:
             self.speedvar = "enhanced_speed"
         elif "speed" in self.df.columns:
             self.speedvar = "speed"
         else:  # or calculate speed
-            self.df['speed_calculated'] = self.df.distance.diff() / self.df.time.diff()
+            self.df["speed_calculated"] = self.df.distance.diff() / self.df.time.diff()
             self.speedvar = "speed_calculated"
 
         # # create a seconds based col starting at 0
         # # This is used for to select the start and end time
-        if 'seconds' not in self.df.columns:
-            self.df['seconds'] = pd.to_datetime(self.df.index, unit='s', origin='unix').astype(int) // 10 ** 9
-            self.df['seconds'] = self.df['seconds'] - self.df.seconds.min()
+        if "seconds" not in self.df.columns:
+            self.df["seconds"] = pd.to_datetime(self.df.index, unit="s", origin="unix").astype(int) // 10**9
+            self.df["seconds"] = self.df["seconds"] - self.df.seconds.min()
 
-        self.df['vam'] = (self.df[self.altitudevar].diff() / self.df.seconds.diff()) * 3600
-        self.df['slope'] = self.df[self.altitudevar].diff() / self.df.distance.diff()
-
-
+        self.df["vam"] = (self.df[self.altitudevar].diff() / self.df.seconds.diff()) * 3600
+        self.df["slope"] = self.df[self.altitudevar].diff() / self.df.distance.diff()
 
         # def columns(self) -> list:
         #     return [c for c in self.df.columns if c in self.known]
 
     def estimate(self, columns: list[str]):
-
+        pass

@@ -1,13 +1,10 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [project]
 name = "pyfitness"
 description = 'Tools for working with fitness data like FIT, GPX,, power and heartrate.'
 readme = "README.md"
-requires-python = ">=3.10"
-license = "MIT"
+requires-python = ">=3.12"
+version="2025.4.0"
+license = {text = "MIT"}
 keywords = ["fit", "bicycle", "power", "heartrate", "zwift", "wahoo"]
 authors = [
   { name = "Vincent Davis", email = "vincent@heteroskedastic.net" },
@@ -15,33 +12,24 @@ authors = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["pandas", "fitdecode", "numpy", "requests"]
-dynamic = ["version"]
+dependencies = [
+    "fitdecode>=0.10.0",
+    "garmin-fit-sdk>=21.158.0",
+    "matplotlib>=3.10.1",
+    "numpy>=2.2.4",
+    "pandas>=2.2.3",
+    "requests>=2.32.3",
+]
 
 [project.urls]
 Documentation = "https://github.com/vincentdavis/pyfitness"
 Issues = "https://github.com/vincentdavis/pyfitness/issues"
 Source = "https://github.com/vincentdavis/pyfitness"
-
-[tool.hatch.version]
-path = "pyfitness/__about__.py"
-
-[tool.hatch.envs.default]
-dependencies = [
-  "pytest",
-  "pytest-cov",
-]
-[tool.hatch.envs.default.scripts]
-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=pyfitness --cov=tests {args}"
-no-cov = "cov --no-cov {args}"
-
-[[tool.hatch.envs.test.matrix]]
-python = ["311", "312"]
 
 [tool.coverage.run]
 branch = true
@@ -59,8 +47,33 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py311"
+target-version = "py313"
 
-[tool.black]
-line-length = 120
-target-version = ['py311']
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = ['E', 'F', 'B', 'BLE', 'SIM', 'PL', 'RUF', 'FLY']
+ignore = []
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+[dependency-groups]
+dev = [
+    "notebook>=7.3.3",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.0.0",
+]
